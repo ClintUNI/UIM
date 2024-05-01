@@ -37,6 +37,8 @@ export type ButtonClass = {
     Released: (self: Button) -> (),
     Hovered: (self: Button) -> (),
     HoverLeft: (self: Button) -> (),
+
+    Remove: (self: Button) -> (),
 }
 
 export type Button = typeof(setmetatable({} :: ButtonClass, {}))
@@ -57,6 +59,7 @@ export type ComponentClass = {
 
     BuildButtons: (self: Component) -> (),
     AddButton: (self: Component, button: Button) -> (),
+    CloseAllButtons: (self: Component) -> (),
     RemoveButtons: (self: Component) -> (),
 
     _: {
@@ -73,11 +76,12 @@ export type ComponentClass = {
     OnClose: (self: Component, callback: (self: Component) -> ()) -> (),
 
     Build: (self: Component, parent: Page) -> (),
-    Update: (self: Component, command: string, parameters: {}) -> (),
+    Update: (self: Component, command: string, parameters: {}?) -> (),
     Open: (self: Component) -> (),
     Close: (self: Component) -> (),
 
     Clean: (self: Component) -> (),
+    Remove: (self: Component) -> (),
 }
 
 export type Component = typeof(setmetatable({} :: ComponentClass, {}))
@@ -98,6 +102,10 @@ export type PageClass = {
 
     BuildButtons: (self: Page) -> (),
     AddButton: (self: Page, button: Button) -> (),
+    GetButton: (self: Page, button: string) -> (),
+    OpenButton: (self: Page, button: string) -> (),
+    CloseButton: (self: Page, button: string) -> (),
+    CloseAllButtons: (self: Page) -> (),
     RemoveButtons: (self: Page) -> (),
 
     Components: {
@@ -108,6 +116,9 @@ export type PageClass = {
     BuildComponents: (self: Page) -> (),
     AddComponent: (self: Page, component: Component) -> (),
     GetComponent: (self: Page, component: string) -> (),
+    OpenComponent: (self: Page, component: string) -> (),
+    CloseComponent: (self: Page, component: string) -> (),
+    CleanComponents: (self: Page) -> (),
     RemoveComponents: (self: Page) -> (),
 
     _: {
@@ -145,8 +156,11 @@ export type WindowClass = {
 
     BuildPages: (self: Window) -> (),
     AddPage: (self: Window, page: Page) -> (),
-    GetPage: (self: Page, page: string) -> (),
+    GetPage: (self: Window, page: string) -> (),
+    OpenPage: (self: Window, page: string) -> (),
+    ClosePage: (self: Window, page: string) -> (),
     RemovePages: (self: Window) -> (),
+    CleanPages: (self: Window) -> (),
 
     _: {
         OnBuild: (self: Window) -> ()?,
@@ -208,6 +222,11 @@ export type Manager = {
         @param window ```Window```
     ]=]
     CloseWindow: (self: Manager, window: Window) -> (),
+
+    --[=[
+        Close and remove all open ```Window``` objects and log their state changes.
+    ]=]
+    CloseAllWindows: (self: Manager) -> (),
 
     --[=[
         Intended to only be run on the first time that the client boots up. \

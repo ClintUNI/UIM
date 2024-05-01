@@ -8,7 +8,14 @@ local module = {}
 function module.new(name: string): types.Component
     local self = setmetatable({
         Name= name,
-        _ = {},
+        Buttons = {
+            Active = {},
+            Stored = {},
+        },
+        
+        _ = {
+            UpdateCallbacks = {},
+        },
     }, component)
 
     return self
@@ -26,8 +33,21 @@ function component:AddButton(button: types.Button)
     self.Buttons.Stored[button.Name] = button
 end
 
-function component:RemoveButtons()
+function component:CloseAllButtons()
+    for _, button in self.Buttons.Active do
+        button:Close()
+    end
+
     self.Buttons.Active = {}
+end
+
+function component:RemoveButtons()
+    self:CloseAllButtons()
+
+    for _, button in self.Buttons.Stored do
+        button:Remove()
+    end
+
     self.Buttons.Stored = {}
 end
 
@@ -62,7 +82,7 @@ function component:Build(parent: types.Page): ()
     end
 end
 
-function component:Update(command: string, parameters: {}): ()
+function component:Update(command: string, parameters: {}?): ()
     if self._.UpdateCallbacks[command] then
         self._.UpdateCallbacks[command](self, parameters)
     else
@@ -91,11 +111,21 @@ function component:Close(): ()
 end
 
 function component:Clean(): ()
+    self:CloseAllButtons()
+
     if self.Container then
         self.Container:Remove()
     end
+end
+
+function component:Remove(): ()
+    self:Clean()
 
     self:RemoveButtons()
+
+    if self.Frame then
+        self.Frame:Destroy()
+    end
 end
 
 return module

@@ -98,4 +98,10 @@ function button:HoverLeft()
     end
 end
 
+function button:Remove()
+    if self.ButtonGui then
+        self.ButtonGui:Destroy()
+    end
+end
+
 return module

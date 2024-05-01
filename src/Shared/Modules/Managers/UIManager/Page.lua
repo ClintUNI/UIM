@@ -35,8 +35,43 @@ function page:AddButton(button: types.Button)
     self.Buttons.Stored[button.Name] = button
 end
 
-function page:RemoveButtons()
+function page:GetButton(button: string): types.Component
+    return self.Buttons.Stored[button]
+end
+
+function page:OpenButton(component: string)
+    local buttonModule= self.Buttons.Stored[component]
+    if buttonModule then
+        buttonModule:Build(self)
+        buttonModule:Open()
+        self.Buttons.Active[component] = buttonModule
+    end
+end
+
+function page:CloseButton(component: string)
+    local buttonModule= self.Buttons.Active[component]
+    if buttonModule then
+        buttonModule:Close()
+        buttonModule:Clean()
+        self.Buttons.Active[component] = nil
+    end
+end
+
+function page:CloseAllButtons()
+    for _, button: types.Button in self.Buttons.Active do
+        button:Close()
+    end
+
     self.Buttons.Active = {}
+end
+
+function page:RemoveButtons()
+    self:CloseAllButtons()
+
+    for _, button: types.Button in self.Buttons.Stored do
+        button:Remove()
+    end
+
     self.Buttons.Stored = {}
 end
 
@@ -58,9 +93,43 @@ function page:GetComponent(component: string): types.Component
     return self.Components.Stored[component]
 end
 
+function page:OpenComponent(component: string)
+    local componentModule= self.Components.Stored[component]
+    if componentModule then
+        componentModule:Build(self)
+        componentModule:Open()
+        self.Components.Open[component] = componentModule
+    end
+end
+
+function page:CloseComponent(component: string)
+    local componentModule= self.Components.Open[component]
+    if componentModule then
+        componentModule:Close()
+        componentModule:Clean()
+        self.Components.Open[component] = nil
+    end
+end
+
+function page:CleanComponents()
+    for _, component: types.Component in self.Components.Open do
+        component:Close()
+    end
+
+    for _, component: types.Component in self.Components.Stored do
+        component:Clean()
+    end
+
+    self.Components.Open = {}
+end
+
 function page:RemoveComponents()
     for _, component: types.Component in self.Components.Open do
-        component:Clean()
+        component:Close()
+    end
+
+    for _, component: types.Component in self.Components.Stored do
+        component:Remove()
     end
 
     self.Components.Open = {}
@@ -116,14 +185,19 @@ function page:Close()
 end
 
 function page:Clean()
-    self:RemoveComponents()
-    self:RemoveButtons()
+    self:CleanComponents()
+    self:CloseAllButtons()
 
-    self.Container:Remove()
+    if self.Container then
+        self.Container:Remove()
+    end
 end
 
 function page:Remove()
     self:Clean()
+
+    self:RemoveComponents()
+    self:RemoveButtons()
     
     if self.Frame then
         self.Frame:Destroy()

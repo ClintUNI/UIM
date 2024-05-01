@@ -33,6 +33,33 @@ function window:GetPage(page: string): types.Page
     return self.Pages.Stored[page]
 end
 
+function window:OpenPage(page: string)
+    local pageModule: types.Page = self.Pages.Stored[page]
+    if pageModule then
+        pageModule:Build(self)
+        pageModule:Open()
+        self.Pages.Open[page] = pageModule
+    end
+end
+
+function window:ClosePage(page: string)
+    local pageModule: types.Page = self.Pages.Open[page]
+    if pageModule then
+        pageModule:Close()
+        pageModule:Clean()
+        self.Pages.Open[page] = nil
+    end
+end
+
+function window:CleanPages()
+    for _, page: types.Page in self.Pages.Open do
+        page:Close()
+        page:Clean()
+    end
+
+    self.Pages.Open = {}
+end
+
 function window:RemovePages()
     for _, page: types.Page in self.Pages.Open do
         page:Remove()
@@ -85,11 +112,12 @@ function window:Close()
 end
 
 function window:Clean()
-    self:RemovePages()
+    self:CleanPages()
 end
 
 function window:Remove()
     self:Clean()
+    self:RemovePages()
     
     if self.ScreenGui then
         self.ScreenGui:Destroy()

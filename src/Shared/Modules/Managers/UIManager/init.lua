@@ -29,6 +29,15 @@ function manager:CloseWindow(window: types.Window)
     self.Windows.Open[window.Name] = nil
 end
 
+function manager:CloseAllWindows()
+    for _, window in self.Windows.Open do
+        window:Close()
+        window:Remove()
+    end
+
+    self.Windows.Open = {}
+end
+
 function manager:Build(source: { ModuleScript })
     self:Clean()
 
