@@ -15,9 +15,7 @@ component:OnBuild(function(self: types.Component): ()
     
     self.Frame.Parent = self.Parent.Frame
 
-    task.delay(2, function()
-        self:Update("Size")
-    end)
+    task.delay(2, self.Update, self, "Size")
 end)
 
 component:OnUpdate("Size", function(self: types.Component, _: {}?)
