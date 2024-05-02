@@ -3,12 +3,7 @@ local replicated = game:GetService("ReplicatedStorage")
 local types = require(replicated.Modules.Managers.UIManager.Types)
 local Window = require(replicated.Modules.Managers.UIManager.Window)
 
-
 local DEFAULT_PAGE = "page"
-
-
-
-
 
 local window = Window.new(script.Name)
 
