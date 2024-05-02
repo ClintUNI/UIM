@@ -91,6 +91,7 @@ export type Component = typeof(setmetatable({} :: ComponentClass, {}))
 export type PageClass = {
     Parent: Window,
     Name: string,
+    Weight: number,
     Frame: Frame,
 
     Container: trove.Trove,
@@ -133,6 +134,7 @@ export type PageClass = {
 
     Build: (self: Page, parent: Window) -> (),
     Open: (self: Page) -> (),
+    Back: (self: Page) -> (),
     Close: (self: Page) -> (),
 
     Clean: (self: Page) -> (),
@@ -157,12 +159,25 @@ export type WindowClass = {
     BuildPages: (self: Window) -> (),
     AddPage: (self: Window, page: Page) -> (),
     GetPage: (self: Window, page: string) -> (),
-    OpenPage: (self: Window, page: string) -> (),
+    OpenPage: (self: Window, page: string, command: "Weighted" | "Forced"?) -> (),
+    OpenLastPage: (self: Window) -> (),
     ClosePage: (self: Window, page: string) -> (),
-    RemovePages: (self: Window) -> (),
+
+    --[=[
+        Will close and clean all open pages. \
+        If a middleware function is given, closing will be dependent on the returned boolean value of said middleware during an iterative process. \
+        An example use case may include closing pages based on their weighted value.
+
+        @param middleware function(Page) ```returns``` (boolean) 
+    ]=]
+    CloseAllPages: (self: Window, middleware: (Page) -> (boolean)) -> (),
+    RemoveAllPages: (self: Window) -> (),
     CleanPages: (self: Window) -> (),
 
     _: {
+        RecentlyOpenedPageName: string,
+        LastOpenedPageName: string,
+
         OnBuild: (self: Window) -> ()?,
         OnOpen: (self: Window) -> ()?,
         OnClose: (self: Window) -> ()?,
