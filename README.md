@@ -1,6 +1,6 @@
-# RNG Fighting
+# UIM
 
-RNG game with combat based rolling in Roblox Luau game.
+UI Manager with sequential building and runtime hot reloading.
 
 ## Tools
 
@@ -21,8 +21,3 @@ RNG game with combat based rolling in Roblox Luau game.
    What're the differences? Luau LSP provides in-editor type checking. Roblox Lua LSP does not. Lua LSP is by far the most superior way to go.
 
 7. [Git](https://git-scm.com) - Versiona management tool for your command line/terminal. This allows you to access and utilize github in a more streamlined manner to both pull and push updates.
-
-## Protocol
-
-When working on new features please create your own branch dedicated to that feature. This means a branch per feature per developer. Once done, merge it to the development branch.
-Main is to be restricted to **release** builds only. This means that it is fully functional and playable without any major bugs.
