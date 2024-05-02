@@ -8,6 +8,8 @@ local module = {}
 function module.new(name: string): types.Page
     local self = setmetatable({
         Name= name,
+        Weight = 0,
+
         Buttons = {
             Active = {},
             Stored = {},
@@ -171,6 +173,12 @@ function page:Open()
 
     if self._.OnOpen then
         self._.OnOpen(self)
+    end
+end
+
+function page:Back()
+    if self.Parent then
+        self.Parent:OpenLastPage()
     end
 end
 
