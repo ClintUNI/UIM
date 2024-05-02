@@ -33,13 +33,30 @@ function window:GetPage(page: string): types.Page
     return self.Pages.Stored[page]
 end
 
-function window:OpenPage(page: string)
+function window:OpenPage(page: string, command: "Weighted" | "Forced"?)
     local pageModule: types.Page = self.Pages.Stored[page]
     if pageModule then
+        if command then
+            if command:upper() == "WEIGHTED" then
+                self:CloseAllPages(function(openPage: types.Page)
+                    return openPage.Weight < pageModule.Weight
+                end)
+            elseif command:upper() == "FORCED" then
+                self:CloseAllPages()
+            end
+        end
+
         pageModule:Build(self)
         pageModule:Open()
         self.Pages.Open[page] = pageModule
+
+        self._.LastOpenedPageName = self._.RecentlyOpenedPageName or page
+        self._.RecentlyOpenedPageName = page
     end
+end
+
+function window:OpenLastPage()
+    self:OpenPage(self._.LastOpenedPageName)
 end
 
 function window:ClosePage(page: string)
@@ -48,6 +65,19 @@ function window:ClosePage(page: string)
         pageModule:Close()
         pageModule:Clean()
         self.Pages.Open[page] = nil
+    end
+end
+
+function window:CloseAllPages(middleware: (types.Page) -> (boolean)?)
+    for _, page: types.Page in self.Pages.Open do
+        if not middleware or not middleware(page) then
+            continue
+        end
+
+        page:Close()
+        page:Clean()
+
+        self.Pages.Open[page.Name] = nil
     end
 end
 
@@ -60,7 +90,7 @@ function window:CleanPages()
     self.Pages.Open = {}
 end
 
-function window:RemovePages()
+function window:RemoveAllPages()
     for _, page: types.Page in self.Pages.Open do
         page:Remove()
     end
