@@ -1,8 +1,15 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local replicated = game:GetService("ReplicatedStorage")
+local signal = require(ReplicatedStorage.Modules.Utility.Signal)
 local trove = require(replicated.Modules.Utility.Trove)
 local types = require(script.Types)
 
 local manager: types.Manager = {
+    Events = {
+        WindowOpened = signal.new(),
+        WindowClosed = signal.new(),
+    },
+
     Packages = {Trove = trove},
 
     Windows = {
@@ -10,6 +17,8 @@ local manager: types.Manager = {
         Stored = {},
     },
 } :: types.Manager
+
+--[[ Window Methods ]]
 
 function manager:GetWindow(name: string)
     return self.Windows.Stored[name]
@@ -20,6 +29,8 @@ function manager:OpenWindow(window: types.Window)
     window:Open()
 
     self.Windows.Open[window.Name] = window
+
+    self.Events.WindowOpened:Fire(window, true)
 end
 
 function manager:CloseWindow(window: types.Window)
@@ -27,12 +38,13 @@ function manager:CloseWindow(window: types.Window)
     window:Remove()
 
     self.Windows.Open[window.Name] = nil
+
+    self.Events.WindowClosed:Fire(window, true)
 end
 
 function manager:CloseAllWindows()
     for _, window in self.Windows.Open do
-        window:Close()
-        window:Remove()
+        self:CloseWindow(window)
     end
 
     self.Windows.Open = {}
