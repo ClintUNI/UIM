@@ -1,6 +1,40 @@
 local replicated = game:GetService("ReplicatedStorage")
+local signal = require(replicated.Modules.Utility.Signal)
 local trove = require(replicated.Modules.Utility.Trove)
 
+
+--
+
+--[[ UIObjects testing]]
+
+export type DraggableClass = {
+    Parent: Page | Component,
+    Name: string,
+    DragButton: GuiButton,
+    DragEvent: signal.Signal<string, Enum.UserInputType, Enum.UserInputState, {Vector2}?, number?, number?>,
+
+    _: {
+        IsDragging: boolean,
+        DragStartTime: number,
+
+        OnBuild: (self: Draggable) -> ()?,
+    },
+
+    OnBuild: (self: Draggable, callback: (self: Draggable) -> ()) -> (),
+
+    Build: (self: Draggable, parent: Page | Component) -> (),
+    IsDragging: (self: Draggable) -> (boolean),
+
+    _DragStart: (self: Draggable) -> (),
+    _DragStop: (self: Draggable) -> (),
+
+    _MobileDrag: (self: Draggable, touchPositions: {Vector2}, scale: number, velocity: number, state: Enum.UserInputState) -> (),
+
+    Clean: (self: Draggable) -> (),
+    Destroy: (self: Draggable) -> (),
+}
+
+export type Draggable = typeof(setmetatable({} :: DraggableClass, {}))
 
 --
 
@@ -115,7 +149,9 @@ export type PageClass = {
     },
 
     BuildComponents: (self: Page) -> (),
-    AddComponent: (self: Page, component: Component) -> (),
+    AddComponent: (self: Page, component: Component) -> (
+        {AsOpened: () -> ()}
+    ),
     GetComponent: (self: Page, component: string) -> (),
     OpenComponent: (self: Page, component: string) -> (),
     CloseComponent: (self: Page, component: string) -> (),
@@ -156,8 +192,15 @@ export type WindowClass = {
         Stored: { [string]: Page },
     },
 
+    Events: {
+        PageOpened: signal.Signal<Page, boolean>,
+        PageClosed: signal.Signal<Page, boolean>,
+    },
+
     BuildPages: (self: Window) -> (),
-    AddPage: (self: Window, page: Page) -> (),
+    AddPage: (self: Window, page: Page) -> (
+        {AsOpened: () -> ()}
+    ),
     GetPage: (self: Window, page: string) -> (),
     OpenPage: (self: Window, page: string, command: "Weighted" | "Forced"?) -> (),
     OpenLastPage: (self: Window) -> (),
@@ -200,6 +243,11 @@ export type Window = typeof(setmetatable({} :: WindowClass, {}))
 --
 
 export type Manager = {
+    Events: {
+        WindowOpened: signal.Signal<Window, boolean>,
+        WindowClosed: signal.Signal<Window, boolean>,
+    },
+
     --[=[
         Useful packages that may be used globally by all windows, pages, and so forth.
     ]=]
@@ -256,6 +304,9 @@ export type Manager = {
     ]=]
     Clean: (self: Manager) -> (),
 }
+
+
+
 
 --
 

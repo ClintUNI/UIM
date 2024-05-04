@@ -15,10 +15,13 @@ window:OnBuild(function(self: types.Window): ()
 
     for _, page: Instance in script.Pages:GetChildren() do
         if not page:IsA("ModuleScript") then continue end
-        self:AddPage(require(page))
+        
+        if page.Name == DEFAULT_PAGE then 
+            self:AddPage(require(page)).AsOpened() 
+        else 
+            self:AddPage(require(page)) 
+        end
     end
-
-    self:OpenPage(DEFAULT_PAGE)
 end)
 
 return window

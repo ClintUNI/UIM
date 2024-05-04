@@ -33,6 +33,8 @@ function page:BuildButtons()
     end
 end
 
+
+
 function page:AddButton(button: types.Button)
     self.Buttons.Stored[button.Name] = button
 end
@@ -81,14 +83,29 @@ end
 
 --[[ Components ]]
 
-function page:BuildComponents()
+local function addComponentTo(self: types.Page, component: types.Component)
+    component:Build(self)
+    component:Open()
+    self.Components.Open[component.Name] = component
+end
+
+--[[ Component Methods ]]
+
+function page:BuildComponents(): ()
     for _, component: types.Button in self.Components.Stored do
         component:Build(self)
     end
 end
 
-function page:AddComponent(component: types.Component)
-    self.Components.Stored[component.Name] = component
+function page:AddComponent(component: types.Component): {AsOpened: () -> ()}
+    local name: string = component.Name
+    self.Components.Stored[name] = component
+
+    return {
+        AsOpened = function(): ()
+            addComponentTo(self, component)
+        end
+    }
 end
 
 function page:GetComponent(component: string): types.Component
@@ -98,9 +115,7 @@ end
 function page:OpenComponent(component: string)
     local componentModule= self.Components.Stored[component]
     if componentModule then
-        componentModule:Build(self)
-        componentModule:Open()
-        self.Components.Open[component] = componentModule
+        addComponentTo(self, componentModule)
     end
 end
 
