@@ -1,3 +1,5 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local signal = require(ReplicatedStorage.Modules.Utility.Signal)
 local types = require(script.Parent.Types)
 
 local window: types.WindowClass = {} :: types.WindowClass
@@ -13,11 +15,30 @@ function module.new(name: string): types.Window
             Stored = {},
         },
 
+        Events = {
+            PageOpened = signal.new(),
+            PageClosed = signal.new(),
+        },
+
         _ = {},
     }, window)
 
     return self
 end
+
+--[[ Pages ]]
+
+local function addPageTo(self: types.Window, page: types.Page): ()
+    local pageName = page.Name
+    page:Build(self)
+    page:Open()
+    self.Pages.Open[pageName] = page
+
+    self._.LastOpenedPageName = self._.RecentlyOpenedPageName or pageName
+    self._.RecentlyOpenedPageName = pageName
+end
+
+--[[ Page Methods ]]
 
 function window:BuildPages()
     for _, page: types.Page in self.Pages.Stored do
@@ -25,8 +46,14 @@ function window:BuildPages()
     end
 end
 
-function window:AddPage(page: types.Page)
+function window:AddPage(page: types.Page): {AsOpened: () -> ()}
     self.Pages.Stored[page.Name] = page
+
+    return {
+        AsOpened = function()
+            addPageTo(self, page)
+        end
+    }
 end
 
 function window:GetPage(page: string): types.Page
@@ -46,17 +73,14 @@ function window:OpenPage(page: string, command: "Weighted" | "Forced"?)
             end
         end
 
-        pageModule:Build(self)
-        pageModule:Open()
-        self.Pages.Open[page] = pageModule
+        addPageTo(self, pageModule)
 
-        self._.LastOpenedPageName = self._.RecentlyOpenedPageName or page
-        self._.RecentlyOpenedPageName = page
+        self.Events.PageOpened:Fire(pageModule)
     end
 end
 
 function window:OpenLastPage()
-    self:OpenPage(self._.LastOpenedPageName)
+    self:OpenPage(self._.LastOpenedPageName, "Forced")
 end
 
 function window:ClosePage(page: string)
@@ -65,6 +89,8 @@ function window:ClosePage(page: string)
         pageModule:Close()
         pageModule:Clean()
         self.Pages.Open[page] = nil
+
+        self.Events.PageClosed:Fire(pageModule)
     end
 end
 
@@ -147,7 +173,7 @@ end
 
 function window:Remove()
     self:Clean()
-    self:RemovePages()
+    self:RemoveAllPages()
     
     if self.ScreenGui then
         self.ScreenGui:Destroy()
