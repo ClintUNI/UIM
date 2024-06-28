@@ -1,6 +1,7 @@
+local objectList = require(script.Parent.ObjectList)
 local types = require(script.Parent.Types)
 
-local page: types.PageClass = {} :: types.PageClass
+local page = {} :: types.PageClass
 page["__index"] = page
 
 local module = {}
@@ -10,150 +11,17 @@ function module.new(name: string): types.Page
         Name= name,
         Weight = 0,
 
-        Buttons = {
-            Active = {},
-            Stored = {},
-        },
-        Components = {
-            Open = {},
-            Stored = {},
-        },
+        Buttons = objectList.new() :: types.ObjectList<types.Button, types.Page>,
+        Components = objectList.new(),
 
         _ = {},
     }, page)
 
+    self.Buttons.Parent = self
+    self.Components.Parent = self
+
     return self
 end
-
---[[ Buttons ]]
-
-function page:BuildButtons()
-    for _, button: types.Button in self.Buttons.Stored do
-        button:Build(self)
-    end
-end
-
-
-
-function page:AddButton(button: types.Button)
-    self.Buttons.Stored[button.Name] = button
-end
-
-function page:GetButton(button: string): types.Component
-    return self.Buttons.Stored[button]
-end
-
-function page:OpenButton(component: string)
-    local buttonModule= self.Buttons.Stored[component]
-    if buttonModule then
-        buttonModule:Build(self)
-        buttonModule:Open()
-        self.Buttons.Active[component] = buttonModule
-    end
-end
-
-function page:CloseButton(component: string)
-    local buttonModule= self.Buttons.Active[component]
-    if buttonModule then
-        buttonModule:Close()
-        buttonModule:Clean()
-        self.Buttons.Active[component] = nil
-    end
-end
-
-function page:CloseAllButtons()
-    for _, button: types.Button in self.Buttons.Active do
-        button:Close()
-    end
-
-    self.Buttons.Active = {}
-end
-
-function page:RemoveButtons()
-    self:CloseAllButtons()
-
-    for _, button: types.Button in self.Buttons.Stored do
-        button:Remove()
-    end
-
-    self.Buttons.Stored = {}
-end
-
---
-
---[[ Components ]]
-
-local function addComponentTo(self: types.Page, component: types.Component)
-    component:Build(self)
-    component:Open()
-    self.Components.Open[component.Name] = component
-end
-
---[[ Component Methods ]]
-
-function page:BuildComponents(): ()
-    for _, component: types.Button in self.Components.Stored do
-        component:Build(self)
-    end
-end
-
-function page:AddComponent(component: types.Component): {AsOpened: () -> ()}
-    local name: string = component.Name
-    self.Components.Stored[name] = component
-
-    return {
-        AsOpened = function(): ()
-            addComponentTo(self, component)
-        end
-    }
-end
-
-function page:GetComponent(component: string): types.Component
-    return self.Components.Stored[component]
-end
-
-function page:OpenComponent(component: string)
-    local componentModule= self.Components.Stored[component]
-    if componentModule then
-        addComponentTo(self, componentModule)
-    end
-end
-
-function page:CloseComponent(component: string)
-    local componentModule= self.Components.Open[component]
-    if componentModule then
-        componentModule:Close()
-        componentModule:Clean()
-        self.Components.Open[component] = nil
-    end
-end
-
-function page:CleanComponents()
-    for _, component: types.Component in self.Components.Open do
-        component:Close()
-    end
-
-    for _, component: types.Component in self.Components.Stored do
-        component:Clean()
-    end
-
-    self.Components.Open = {}
-end
-
-function page:RemoveComponents()
-    for _, component: types.Component in self.Components.Open do
-        component:Close()
-    end
-
-    for _, component: types.Component in self.Components.Stored do
-        component:Remove()
-    end
-
-    self.Components.Open = {}
-    self.Components.Stored = {}
-end
-
---
 
 --[[ Page ]]
 
@@ -174,11 +42,22 @@ function page:Build(parent: types.Window)
 
     self.Parent = parent
 
-    self.Container = parent.Manager.Packages.Trove.new()
+    local manager = parent.Parent
+    self.Container = manager.Packages.Trove.new()
 
     if self._.OnBuild then
         self._.OnBuild(self)
     end
+
+    self._.Status = "Built"
+end
+
+function page:GetStatus(): "Built" | "Stored"
+    return self._.Status
+end
+
+function page:StatusIs(status: "Built" | "Stored")
+    return status == self._.Status
 end
 
 function page:Open()
@@ -208,19 +87,24 @@ function page:Close()
 end
 
 function page:Clean()
-    self:CleanComponents()
-    self:CloseAllButtons()
+    self.Components:CleanAll()
+    self.Buttons:CleanAll()
 
     if self.Container then
-        self.Container:Remove()
+        self.Container:Destroy()
     end
+
+    self._.Status = "Stored"
 end
 
 function page:Remove()
     self:Clean()
 
-    self:RemoveComponents()
-    self:RemoveButtons()
+    self.Components:CloseAll()
+    self.Components:RemoveAll()
+
+    self.Buttons:CloseAll()
+    self.Buttons:RemoveAll()
     
     if self.Frame then
         self.Frame:Destroy()
@@ -230,7 +114,7 @@ end
 --[[ Helper ]]
 
 function page:GetManager(): types.Manager
-    return self.Parent.Manager
+    return self.Parent.Parent
 end
 
 return module
