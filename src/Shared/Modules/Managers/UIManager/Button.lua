@@ -1,12 +1,13 @@
 local types = require(script.Parent.Types)
 
-local button: types.ButtonClass = {} :: types.ButtonClass
+local button = {} :: types.ButtonClass
 button["__index"] = button
 
 local module = {}
 
 function module.new(name: string): types.Button
     local self = setmetatable({
+        Status = "Stored",
         Name= name,
         _ = {},
     }, button)
@@ -32,6 +33,14 @@ function button:Build(parent: types.Page | types.Component)
     if self._.OnBuild then
         self._.OnBuild(self)
     end
+end
+
+function button:GetStatus(): "Built" | "Stored"
+    return self._.Status
+end
+
+function button:StatusIs(status: "Built" | "Stored")
+    return status == self._.Status
 end
 
 function button:Open()
