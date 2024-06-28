@@ -1,6 +1,7 @@
+local objectList = require(script.Parent.ObjectList)
 local types = require(script.Parent.Types)
 
-local component: types.ComponentClass = {} :: types.ComponentClass
+local component = {} :: types.ComponentClass
 component["__index"] = component
 
 local module = {}
@@ -8,50 +9,17 @@ local module = {}
 function module.new(name: string): types.Component
     local self = setmetatable({
         Name= name,
-        Buttons = {
-            Active = {},
-            Stored = {},
-        },
+        Buttons = objectList.new(),
         
         _ = {
             UpdateCallbacks = {},
         },
     }, component)
 
+    self.Buttons.Parent = self
+
     return self
 end
-
---[[ Buttons ]]
-
-function component:BuildButtons()
-    for _, button: types.Button in self.Buttons.Stored do
-        button:Build(self)
-    end
-end
-
-function component:AddButton(button: types.Button)
-    self.Buttons.Stored[button.Name] = button
-end
-
-function component:CloseAllButtons()
-    for _, button in self.Buttons.Active do
-        button:Close()
-    end
-
-    self.Buttons.Active = {}
-end
-
-function component:RemoveButtons()
-    self:CloseAllButtons()
-
-    for _, button in self.Buttons.Stored do
-        button:Remove()
-    end
-
-    self.Buttons.Stored = {}
-end
-
---
 
 function component:OnBuild(callback: (self: types.Component) -> ()): ()
     self._.OnBuild = callback
@@ -80,6 +48,16 @@ function component:Build(parent: types.Page): ()
     if self._.OnBuild then
         self._.OnBuild(self)
     end
+
+    self._.Status = "Built"
+end
+
+function component:GetStatus(): "Built" | "Stored"
+    return self._.Status
+end
+
+function component:StatusIs(status: "Built" | "Stored")
+    return status == self._.Status
 end
 
 function component:Update(command: string, parameters: {}?): ()
@@ -111,17 +89,19 @@ function component:Close(): ()
 end
 
 function component:Clean(): ()
-    self:CloseAllButtons()
+    self.Buttons:CleanAll()
 
     if self.Container then
         self.Container:Remove()
     end
+
+    self._.Status = "Stored"
 end
 
 function component:Remove(): ()
     self:Clean()
 
-    self:RemoveButtons()
+    self.Buttons:RemoveAll()
 
     if self.Frame then
         self.Frame:Destroy()
