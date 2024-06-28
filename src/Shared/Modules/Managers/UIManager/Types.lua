@@ -14,6 +14,8 @@ export type DraggableClass = {
     DragEvent: signal.Signal<string, Enum.UserInputType, Enum.UserInputState, {Vector2}?, number?, number?>,
 
     _: {
+        Status: "Stored" | "Built",
+
         IsDragging: boolean,
         DragStartTime: number,
 
@@ -36,31 +38,95 @@ export type DraggableClass = {
 
 export type Draggable = typeof(setmetatable({} :: DraggableClass, {}))
 
+--[[ == Template == ]]
+
+export type TemplateClass<Object, MethodOptions, Parameters> = {
+    Files: {
+        [string]: (self: Object, parameters: {}?) -> ()
+    },
+    Create: ((self: Template<Object, MethodOptions, Parameters>, method: MethodOptions, callback: (self: Object, parameters: Parameters?) -> ()) -> ()),
+    Fire: ((self: Template<Object, MethodOptions, Parameters>, method: MethodOptions, object: Object, parameters: Parameters?) -> ()),
+}
+
+export type Template<Object, MethodOptions, Parameters> = typeof(setmetatable({} :: TemplateClass<Object, MethodOptions, Parameters>, {}))
+
+--[[ == ObjectList == ]]
+
+export type ListableObject = (Button | Component | Page)
+
+export type ObjectListClass<LO, P> = {
+    Parent: P,
+
+    Opened: { [string]: boolean },
+    Built: { [string]: LO },
+    Stored: { [string]: LO },
+
+    RecentlyOpenedName: string,
+    LastOpenedName: string,
+
+    Add: (self: ObjectList<LO, P>, object: LO) -> (),
+    Get: (self: ObjectList<LO, P>, name: string) -> (LO?),
+    Remove: (self: ObjectList<LO, P>, name: string) -> (),
+    RemoveAll: (self: ObjectList<LO, P>) -> (),
+    Build: (self: ObjectList<LO, P>, name: string) -> (),
+    BuildAll: (self: ObjectList<LO, P>) -> (),
+    Open: (self: ObjectList<LO, P>, name: string, mode: ("Weighted" | "Forced")?) -> (),
+    OpenAll: (self: ObjectList<LO, P>) -> (),
+    OpenPrevious: (self: ObjectList<LO, P>) -> (),
+    Close: (self: ObjectList<LO, P>, name: string) -> (),
+    CloseAll: (self: ObjectList<LO, P>) -> (),
+    Clean: (self: ObjectList<LO, P>,  name: string) -> (),
+    CleanAll: (self: ObjectList<LO, P>) -> (),
+}
+
+export type ObjectList<LO, P> = typeof(setmetatable({} :: ObjectListClass<LO, P>, {}))
+
+
+--[[ == Interfaces == ]]
+
+type BuildableObject<Self, Parent> = {
+    Parent: Parent,
+
+    _: {
+        Status: "Stored" | "Built",
+
+        OnBuild: (self: Self) -> ()?,
+    },
+
+    OnBuild: (self: Self, callback: (self: Self) -> ()) -> (),
+    Build: (self: Self, parent: Parent) -> (),
+
+    GetStatus: (self: Self) -> ("Stored" | "Built"),
+    StatusIs: (self: Self, status: "Stored" | "Built") -> (boolean),
+}
+
+type RenderableObject<Self> = {
+    _: {
+        OnOpen: (self: Self) -> ()?,
+        OnClose: (self: Self) -> ()?,
+    },
+
+    OnOpen: (self: Self, callback: (self: Self) -> ()) -> (),
+    OnClose: (self: Self, callback: (self: Self) -> ()) -> (),
+
+    Open: (self: Self) -> (),
+    Close: (self: Self) -> (),
+}
+
 --
 
+export type ButtonEvents = "Pressed" | "Released" | "Hovered" | "HoverLeft"
+
 export type ButtonClass = {
-    Parent: Page | Component,
     Name: string,
     ButtonGui: GuiButton,
 
     _: {
-        OnBuild: (self: Button) -> ()?,
-        OnOpen: (self: Button) -> ()?,
-        OnClose: (self: Button) -> ()?,
-
         OnPressed: (self: Button) -> ()?,
         OnReleased: (self: Button) -> ()?,
         OnHovered: (self: Button) -> ()?,
         OnHoverLeft: (self: Button) -> ()?,
     },
-
-    OnBuild: (self: Button, callback: (self: Button) -> ()) -> (),
-    OnOpen: (self: Button, callback: (self: Button) -> ()) -> (),
-    OnClose: (self: Button, callback: (self: Button) -> ()) -> (),
-
-    Build: (self: Button, parent: Page | Component) -> (),
-    Open: (self: Button) -> (),
-    Close: (self: Button) -> (),
 
     OnPressed: (self: Button, callback: (self: Button) -> ()) -> (),
     OnReleased: (self: Button, callback: (self: Button) -> ()) -> (),
@@ -73,23 +139,19 @@ export type ButtonClass = {
     HoverLeft: (self: Button) -> (),
 
     Remove: (self: Button) -> (),
-}
+} & BuildableObject<Button, Page | Component> & RenderableObject<Button>
 
 export type Button = typeof(setmetatable({} :: ButtonClass, {}))
 
 --
 
 export type ComponentClass = {
-    Parent: Page,
     Name: string,
     Frame: Frame,
 
     Container: trove.Trove,
 
-    Buttons: {
-        Active: { [string]: Button },
-        Stored: { [string]: Button },
-    },
+    Buttons: ObjectList<Button, Component>,
 
     BuildButtons: (self: Component) -> (),
     AddButton: (self: Component, button: Button) -> (),
@@ -97,146 +159,55 @@ export type ComponentClass = {
     RemoveButtons: (self: Component) -> (),
 
     _: {
-        OnBuild: (self: Component) -> ()?,
-        OnOpen: (self: Component) -> ()?,
-        OnClose: (self: Component) -> ()?,
-
         UpdateCallbacks: { [string]: (self: Page, parameters: {}) -> () },
     },
 
-    OnBuild: (self: Component, callback: (self: Component) -> ()) -> (),
     OnUpdate: (self: Component, command: string, callback: (self: Component) -> ()) -> (),
-    OnOpen: (self: Component, callback: (self: Component) -> ()) -> (),
-    OnClose: (self: Component, callback: (self: Component) -> ()) -> (),
 
-    Build: (self: Component, parent: Page) -> (),
     Update: (self: Component, command: string, parameters: {}?) -> (),
-    Open: (self: Component) -> (),
-    Close: (self: Component) -> (),
 
     Clean: (self: Component) -> (),
     Remove: (self: Component) -> (),
-}
+} & BuildableObject<Component, Page> & RenderableObject<Component>
 
 export type Component = typeof(setmetatable({} :: ComponentClass, {}))
 
 --
 
 export type PageClass = {
-    Parent: Window,
     Name: string,
     Weight: number,
     Frame: Frame,
 
     Container: trove.Trove,
 
-    Buttons: {
-        Active: { [string]: Button },
-        Stored: { [string]: Button },
-    },
-
-    BuildButtons: (self: Page) -> (),
-    AddButton: (self: Page, button: Button) -> (),
-    GetButton: (self: Page, button: string) -> (),
-    OpenButton: (self: Page, button: string) -> (),
-    CloseButton: (self: Page, button: string) -> (),
-    CloseAllButtons: (self: Page) -> (),
-    RemoveButtons: (self: Page) -> (),
-
-    Components: {
-        Open: { [string]: Component },
-        Stored: { [string]: Component },
-    },
-
-    BuildComponents: (self: Page) -> (),
-    AddComponent: (self: Page, component: Component) -> (
-        {AsOpened: () -> ()}
-    ),
-    GetComponent: (self: Page, component: string) -> (),
-    OpenComponent: (self: Page, component: string) -> (),
-    CloseComponent: (self: Page, component: string) -> (),
-    CleanComponents: (self: Page) -> (),
-    RemoveComponents: (self: Page) -> (),
-
-    _: {
-        OnBuild: (self: Page) -> ()?,
-        OnOpen: (self: Page) -> ()?,
-        OnClose: (self: Page) -> ()?,
-    },
-
-    OnBuild: (self: Page, callback: (self: Page) -> ()) -> (),
-    OnOpen: (self: Page, callback: (self: Page) -> ()) -> (),
-    OnClose: (self: Page, callback: (self: Page) -> ()) -> (),
-
-    Build: (self: Page, parent: Window) -> (),
-    Open: (self: Page) -> (),
-    Back: (self: Page) -> (),
-    Close: (self: Page) -> (),
+    Buttons: ObjectList<Button, Page>,
+    Components: ObjectList<Component, Page>,
 
     Clean: (self: Page) -> (),
     Remove: (self: Page) -> (),
 
     GetManager: (self: Window) -> (Manager),
-}
+} & BuildableObject<Page, Window> & RenderableObject<Page>
 
 export type Page = typeof(setmetatable({} :: PageClass, {}))
 
 --
 
 export type WindowClass = {
-    Manager: Manager,
     Name: string,
     ScreenGui: ScreenGui,
-    Pages: {
-        Open: { [string]: Page },
-        Stored: { [string]: Page },
-    },
+    Pages: ObjectList<Page, Window>,
 
+    --[[ Not used, at the moment.]]
     Events: {
         PageOpened: signal.Signal<Page, boolean>,
         PageClosed: signal.Signal<Page, boolean>,
     },
 
-    BuildPages: (self: Window) -> (),
-    AddPage: (self: Window, page: Page) -> (
-        {AsOpened: () -> ()}
-    ),
-    GetPage: (self: Window, page: string) -> (),
-    OpenPage: (self: Window, page: string, command: "Weighted" | "Forced"?) -> (),
-    OpenLastPage: (self: Window) -> (),
-    ClosePage: (self: Window, page: string) -> (),
-
-    --[=[
-        Will close and clean all open pages. \
-        If a middleware function is given, closing will be dependent on the returned boolean value of said middleware during an iterative process. \
-        An example use case may include closing pages based on their weighted value.
-
-        @param middleware function(Page) ```returns``` (boolean) 
-    ]=]
-    CloseAllPages: (self: Window, middleware: (Page) -> (boolean)) -> (),
-    RemoveAllPages: (self: Window) -> (),
-    CleanPages: (self: Window) -> (),
-
-    _: {
-        RecentlyOpenedPageName: string,
-        LastOpenedPageName: string,
-
-        OnBuild: (self: Window) -> ()?,
-        OnOpen: (self: Window) -> ()?,
-        OnClose: (self: Window) -> ()?,
-    },
-
-    OnBuild: (self: Window, callback: (self: Window) -> ()) -> (),
-    OnOpen: (self: Window, callback: (self: Window) -> ()) -> (),
-    OnClose: (self: Window, callback: (self: Window) -> ()) -> (),
-
-    Build: (self: Window, manager: Manager) -> (),
-    Open: (self: Window) -> (),
-    Close: (self: Window) -> (),
-
     Clean: (self: Window) -> (),
     Remove: (self: Window) -> (),
-}
+} & BuildableObject<Window, Manager> & RenderableObject<Window>
 
 export type Window = typeof(setmetatable({} :: WindowClass, {}))
 
@@ -278,6 +249,13 @@ export type Manager = {
         @param window ```Window```
     ]=]
     OpenWindow: (self: Manager, window: Window) -> (),
+
+    --[=[
+        Build and open a ```Window``` object and log its opened state based on the given name.
+        
+        @param name ```string```
+    ]=]
+    OpenWindowByName: (self: Manager, name: string) -> (),
 
     --[=[
         Close and remove a ```Window``` object and log its state change.
