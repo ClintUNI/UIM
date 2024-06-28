@@ -33,6 +33,10 @@ function manager:OpenWindow(window: types.Window)
     self.Events.WindowOpened:Fire(window, true)
 end
 
+function manager:OpenWindowByName(name: string)
+    self:OpenWindow(self:GetWindow(name))
+end
+
 function manager:CloseWindow(window: types.Window)
     window:Close()
     window:Remove()
