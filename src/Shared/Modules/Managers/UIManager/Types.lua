@@ -5,42 +5,9 @@ local trove = require(replicated.Modules.Utility.Trove)
 
 --
 
---[[ UIObjects testing]]
-
-export type DraggableClass = {
-    Parent: Page | Component,
-    Name: string,
-    DragButton: GuiButton,
-    DragEvent: signal.Signal<string, Enum.UserInputType, Enum.UserInputState, {Vector2}?, number?, number?>,
-
-    _: {
-        Status: "Stored" | "Built",
-
-        IsDragging: boolean,
-        DragStartTime: number,
-
-        OnBuild: (self: Draggable) -> ()?,
-    },
-
-    OnBuild: (self: Draggable, callback: (self: Draggable) -> ()) -> (),
-
-    Build: (self: Draggable, parent: Page | Component) -> (),
-    IsDragging: (self: Draggable) -> (boolean),
-
-    _DragStart: (self: Draggable) -> (),
-    _DragStop: (self: Draggable) -> (),
-
-    _MobileDrag: (self: Draggable, touchPositions: {Vector2}, scale: number, velocity: number, state: Enum.UserInputState) -> (),
-
-    Clean: (self: Draggable) -> (),
-    Destroy: (self: Draggable) -> (),
-}
-
-export type Draggable = typeof(setmetatable({} :: DraggableClass, {}))
-
 --[[ == Template == ]]
 
-export type TemplateClass<Object, MethodOptions, Parameters> = {
+type TemplateClass<Object, MethodOptions, Parameters> = {
     Files: {
         [string]: (self: Object, parameters: {}?) -> ()
     },
@@ -98,6 +65,11 @@ type BuildableObject<Self, Parent> = {
 
     GetStatus: (self: Self) -> ("Stored" | "Built"),
     StatusIs: (self: Self, status: "Stored" | "Built") -> (boolean),
+}
+
+type CleanableObject<Self> = {
+    Clean: (self: Self) -> (),
+    Remove: (self: Self) -> (),
 }
 
 type RenderableObject<Self> = {
@@ -165,10 +137,7 @@ export type ComponentClass = {
     OnUpdate: (self: Component, command: string, callback: (self: Component) -> ()) -> (),
 
     Update: (self: Component, command: string, parameters: {}?) -> (),
-
-    Clean: (self: Component) -> (),
-    Remove: (self: Component) -> (),
-} & BuildableObject<Component, Page> & RenderableObject<Component>
+} & BuildableObject<Component, Page> & CleanableObject<Component> & RenderableObject<Component>
 
 export type Component = typeof(setmetatable({} :: ComponentClass, {}))
 
@@ -184,11 +153,8 @@ export type PageClass = {
     Buttons: ObjectList<Button, Page>,
     Components: ObjectList<Component, Page>,
 
-    Clean: (self: Page) -> (),
-    Remove: (self: Page) -> (),
-
     GetManager: (self: Window) -> (Manager),
-} & BuildableObject<Page, Window> & RenderableObject<Page>
+} & BuildableObject<Page, Window> & CleanableObject<Page> & RenderableObject<Page>
 
 export type Page = typeof(setmetatable({} :: PageClass, {}))
 
@@ -204,10 +170,7 @@ export type WindowClass = {
         PageOpened: signal.Signal<Page, boolean>,
         PageClosed: signal.Signal<Page, boolean>,
     },
-
-    Clean: (self: Window) -> (),
-    Remove: (self: Window) -> (),
-} & BuildableObject<Window, Manager> & RenderableObject<Window>
+} & BuildableObject<Window, Manager> & CleanableObject<Window> & RenderableObject<Window>
 
 export type Window = typeof(setmetatable({} :: WindowClass, {}))
 
